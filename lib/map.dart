@@ -24,36 +24,17 @@ class _MapState extends State<Map> {
   Circle circle;
   GoogleMapController _controller;
   PanelController _pc = new PanelController();
+  final addressController = TextEditingController();
+  double _panelHeightOpen;
+  double _panelHeightClosed = 95.0;
+  double _panelHeightItineraire = 200;
+  String searchAddress;
+  bool checkIfItineraire = false;
+  bool onTapSearch = false;
 
   void initState() {
     _getUserLocation();
     super.initState();
-  }
-
-  static final CameraPosition initialLocation = CameraPosition(
-    target: LatLng(48.8566969, 2.3514616),
-    zoom: 14.4746,
-  );
-  // Marker Current Location
-
-  // Get location
-  _getUserLocation() async {
-    l.Position position = await l.Geolocator()
-        .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
-    List<l.Placemark> placemark = await l.Geolocator()
-        .placemarkFromCoordinates(position.latitude, position.longitude);
-    _controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(position.latitude, position.longitude), zoom: 17.0)));
-  }
-
-  final addressController = TextEditingController();
-
-  //Map Style
-
-  void setMapStyle() async {
-    String style = await DefaultAssetBundle.of(context)
-        .loadString('assets/map_style.json');
-    _controller.setMapStyle(style);
   }
 
   @override
@@ -63,6 +44,36 @@ class _MapState extends State<Map> {
     }
     super.dispose();
   }
+
+  static final CameraPosition initialLocation = CameraPosition(
+    target: LatLng(48.8566969, 2.3514616),
+    zoom: 14.4746,
+  );
+
+  // Get currentlocation
+
+  _getUserLocation() async {
+    setState(() {
+      checkIfItineraire = false;
+    });
+
+    l.Position position = await l.Geolocator()
+        .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+    List<l.Placemark> placemark = await l.Geolocator()
+        .placemarkFromCoordinates(position.latitude, position.longitude);
+    _controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        target: LatLng(position.latitude, position.longitude), zoom: 17.0)));
+  }
+
+  //Map Style
+
+  void setMapStyle() async {
+    String style = await DefaultAssetBundle.of(context)
+        .loadString('assets/map_style.json');
+    _controller.setMapStyle(style);
+  }
+
+  // SearchBar
 
   Widget searchBar() {
     return checkIfItineraire
@@ -111,6 +122,8 @@ class _MapState extends State<Map> {
           );
   }
 
+  //iconLocation
+
   Widget iconLocation() {
     return Positioned(
       left: 360,
@@ -129,9 +142,7 @@ class _MapState extends State<Map> {
     );
   }
 
-  double _panelHeightOpen;
-  double _panelHeightClosed = 95.0;
-  double _panelHeightItineraire = 200;
+// Slide panel
 
   Widget _panel(ScrollController sc) {
     return MediaQuery.removePadding(
@@ -155,8 +166,7 @@ class _MapState extends State<Map> {
         ));
   }
 
-  String searchAddress;
-  bool checkIfItineraire = false;
+  // if tap on address => Naviguate
 
   Future<Null> displayPrediction(G.Prediction p) async {
     if (p != null) {
@@ -181,6 +191,8 @@ class _MapState extends State<Map> {
     }
   }
 
+  // set marker location to select adresse by the searchbar
+
   BitmapDescriptor _markerIcon;
   Set<Marker> _markers = HashSet<Marker>();
 
@@ -200,10 +212,6 @@ class _MapState extends State<Map> {
               markerId: MarkerId(latLng.toString()),
               position: LatLng(
                   value[0].position.latitude, value[0].position.longitude),
-              infoWindow: InfoWindow(
-                title: "San Francsico",
-                snippet: "An Interesting city",
-              ),
               icon: _markerIcon),
         );
       });
@@ -221,14 +229,46 @@ class _MapState extends State<Map> {
     return byteData.buffer.asUint8List();
   }
 
-  bool onTapSearch = false;
+  // display view itineraire on sliding panel
 
   Widget detailsLocation() {
     return checkIfItineraire
-        ? FlatButton(
-            color: Colors.red,
-            child: Text('Itinéraire'),
-            onPressed: () => _getUserLocation(),
+        ? Column(
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  RawMaterialButton(
+                    shape: CircleBorder(),
+                    fillColor: Color.fromRGBO(0, 0, 0, 0.2),
+                    elevation: 1.0,
+                    child: Icon(
+                      Icons.close,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {},
+                  )
+                ],
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              Container(
+                width: MediaQuery.of(context).size.width * 0.95,
+                height: MediaQuery.of(context).size.height * 0.06,
+                child: FlatButton(
+                  color: Colors.blue[600],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6.0),
+                  ),
+                  child: Text(
+                    'Itinéraire',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () => _getUserLocation(),
+                ),
+              ),
+            ],
           )
         : SizedBox.shrink();
   }
