@@ -81,7 +81,7 @@ class _MapState extends State<Map> {
 
             G.Prediction p = await PlacesAutocomplete.show(
                 context: context,
-                apiKey: kGoogleApiKey,
+               // apiKey: kGoogleApiKey,
                 language: "fr",
                 mode: Mode.overlay,
                 logo: Container(height: 0),
