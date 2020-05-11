@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'dart:typed_data';
-import 'constants.dart';
+import '.env.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -81,7 +81,7 @@ class _MapState extends State<Map> {
 
             G.Prediction p = await PlacesAutocomplete.show(
                 context: context,
-               // apiKey: kGoogleApiKey,
+                apiKey: kGoogleApiKey,
                 language: "fr",
                 mode: Mode.overlay,
                 logo: Container(height: 0),
