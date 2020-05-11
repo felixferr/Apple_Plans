@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'dart:typed_data';
-import '.env.dart';
+import 'credentials.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -20,12 +20,10 @@ class Map extends StatefulWidget {
 
 class _MapState extends State<Map> {
   StreamSubscription _locationSubscription;
-  Location _locationTracker = Location();
   Marker marker;
   Circle circle;
   GoogleMapController _controller;
   PanelController _pc = new PanelController();
-  static LatLng _initialPosition;
 
   void initState() {
     _getUserLocation();
@@ -67,48 +65,50 @@ class _MapState extends State<Map> {
   }
 
   Widget searchBar() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.06,
-      width: double.infinity,
-      child: Center(
-        child: TextField(
-          onTap: () async {
-            setState(() {
-              onTapSearch = true;
-            });
+    return checkIfItineraire
+        ? SizedBox.shrink()
+        : Container(
+            height: MediaQuery.of(context).size.height * 0.06,
+            width: double.infinity,
+            child: Center(
+              child: TextField(
+                onTap: () async {
+                  setState(() {
+                    onTapSearch = true;
+                  });
 
-            await _pc.open();
+                  await _pc.open();
 
-            G.Prediction p = await PlacesAutocomplete.show(
-                context: context,
-                apiKey: kGoogleApiKey,
-                language: "fr",
-                mode: Mode.overlay,
-                logo: Container(height: 0),
-                components: [G.Component(G.Component.country, "fr")]);
-            displayPrediction(p);
-          },
-          decoration: InputDecoration(
-            fillColor: Colors.grey[400],
-            contentPadding: EdgeInsets.symmetric(vertical: 15.0),
-            border: new OutlineInputBorder(
-              borderRadius: const BorderRadius.all(
-                const Radius.circular(10.0),
+                  G.Prediction p = await PlacesAutocomplete.show(
+                      context: context,
+                      apiKey: kGoogleApiKey,
+                      language: "fr",
+                      mode: Mode.overlay,
+                      logo: Container(height: 0),
+                      components: [G.Component(G.Component.country, "fr")]);
+                  displayPrediction(p);
+                },
+                decoration: InputDecoration(
+                  fillColor: Colors.grey[400],
+                  contentPadding: EdgeInsets.symmetric(vertical: 15.0),
+                  border: new OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(
+                      const Radius.circular(10.0),
+                    ),
+                  ),
+                  hintText: 'Rechercher lieu ou adresse',
+                  prefixIcon: IconButton(
+                    icon: Icon(
+                      Icons.search,
+                      size: 30.0,
+                    ),
+                    onPressed: () {},
+                  ),
+                  filled: true,
+                ),
               ),
             ),
-            hintText: 'Rechercher lieu ou adresse',
-            prefixIcon: IconButton(
-              icon: Icon(
-                Icons.search,
-                size: 30.0,
-              ),
-              onPressed: () {},
-            ),
-            filled: true,
-          ),
-        ),
-      ),
-    );
+          );
   }
 
   Widget iconLocation() {
@@ -131,6 +131,7 @@ class _MapState extends State<Map> {
 
   double _panelHeightOpen;
   double _panelHeightClosed = 95.0;
+  double _panelHeightItineraire = 200;
 
   Widget _panel(ScrollController sc) {
     return MediaQuery.removePadding(
@@ -145,6 +146,7 @@ class _MapState extends State<Map> {
                 height: 12.0,
               ),
               searchBar(),
+              detailsLocation(),
               SizedBox(
                 height: 24,
               ),
@@ -154,12 +156,14 @@ class _MapState extends State<Map> {
   }
 
   String searchAddress;
+  bool checkIfItineraire = false;
 
   Future<Null> displayPrediction(G.Prediction p) async {
     if (p != null) {
       _pc.close();
       setState(() {
         onTapSearch = false;
+        checkIfItineraire = true;
       });
 
       searchAddress = p.description;
@@ -219,6 +223,16 @@ class _MapState extends State<Map> {
 
   bool onTapSearch = false;
 
+  Widget detailsLocation() {
+    return checkIfItineraire
+        ? FlatButton(
+            color: Colors.red,
+            child: Text('Itinéraire'),
+            onPressed: () => _getUserLocation(),
+          )
+        : SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     _panelHeightOpen = MediaQuery.of(context).size.height * 0.925;
@@ -240,7 +254,8 @@ class _MapState extends State<Map> {
           iconLocation(),
           SlidingUpPanel(
             maxHeight: _panelHeightOpen,
-            minHeight: _panelHeightClosed,
+            minHeight:
+                checkIfItineraire ? _panelHeightItineraire : _panelHeightClosed,
             parallaxEnabled: true,
             parallaxOffset: .5,
             controller: _pc,
