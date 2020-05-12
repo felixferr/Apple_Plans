@@ -34,7 +34,7 @@ class _MapState extends State<Map> {
   final addressController = TextEditingController();
   double _panelHeightOpen;
   double _panelHeightClosed = 95.0;
-  double _panelHeightItineraire = 200;
+  double _panelHeightItineraire = 220;
   String searchAddress;
   bool checkIfItineraire = false;
   bool onTapSearch = false;
@@ -359,21 +359,9 @@ class _MapState extends State<Map> {
                             Text(
                               distanceTravel,
                               style: TextStyle(
-                                  color: Colors.black87,
+                                  color: Colors.white70,
                                   fontSize: MediaQuery.of(context).size.height *
                                       0.018),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 7.0, left: 5),
-                              child: Text(
-                                '.',
-                                style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize:
-                                        MediaQuery.of(context).size.height *
-                                            0.018),
-                              ),
                             ),
                           ],
                         ),
@@ -418,15 +406,23 @@ class _MapState extends State<Map> {
               ),
               checkIfSelectItineraire
                   ? SizedBox.shrink()
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                  : Column(
                       children: <Widget>[
-                        Container(
-                          child: Text('Adresse'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: <Widget>[
+                            Container(
+                              child: Text(
+                                'Adresse',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                            ),
+                          ],
                         ),
+                        Text(searchAddress,
+                            style: TextStyle(color: Colors.white)),
                       ],
                     ),
-              Text(searchAddress, style: TextStyle(color: Colors.white)),
             ],
           )
         : SizedBox.shrink();
