@@ -301,6 +301,8 @@ class _MapState extends State<Map> {
                     onPressed: () {
                       setState(() {
                         checkIfItineraire = false;
+                        checkIfSelectItineraire = false;
+
                         polylineCoordinates.clear();
                         _polylines.clear();
                         _markers.clear();
@@ -376,6 +378,7 @@ class _MapState extends State<Map> {
                               'OK',
                               style: TextStyle(color: Colors.white),
                             ),
+                            onPressed: () => _getUserLocation(),
                           ),
                         )
                       ],
