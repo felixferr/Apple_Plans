@@ -12,6 +12,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:google_maps_webservice/places.dart' as G;
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 class Map extends StatefulWidget {
   @override
@@ -31,6 +32,13 @@ class _MapState extends State<Map> {
   String searchAddress;
   bool checkIfItineraire = false;
   bool onTapSearch = false;
+
+  double _destinationLatitude;
+  double _destinationLongitude;
+
+  Set<Polyline> _polylines = {};
+  List<LatLng> polylineCoordinates = [];
+  PolylinePoints polylinePoints = PolylinePoints();
 
   void initState() {
     _getUserLocation();
@@ -220,6 +228,9 @@ class _MapState extends State<Map> {
           target:
               LatLng(value[0].position.latitude, value[0].position.longitude),
           zoom: 17.0)));
+
+      _destinationLatitude = value[0].position.latitude;
+      _destinationLongitude = value[0].position.longitude;
     });
   }
 
@@ -246,7 +257,14 @@ class _MapState extends State<Map> {
                       Icons.close,
                       color: Colors.grey,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      setState(() {
+                        checkIfItineraire = false;
+                        polylineCoordinates.clear();
+                        _polylines.clear();
+                        _markers.clear();
+                      });
+                    },
                   )
                 ],
               ),
@@ -257,7 +275,7 @@ class _MapState extends State<Map> {
                 width: MediaQuery.of(context).size.width * 0.95,
                 height: MediaQuery.of(context).size.height * 0.06,
                 child: FlatButton(
-                  color: Colors.blue[600],
+                  color: Color.fromARGB(255, 40, 122, 198),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6.0),
                   ),
@@ -265,12 +283,65 @@ class _MapState extends State<Map> {
                     'Itinéraire',
                     style: TextStyle(color: Colors.white),
                   ),
-                  onPressed: () => _getUserLocation(),
+                  onPressed: () {
+                    setPolylines();
+                  },
                 ),
               ),
             ],
           )
         : SizedBox.shrink();
+  }
+
+  bool checkIfPlDl = false;
+
+  setPolylines() async {
+    l.Position position = await l.Geolocator()
+        .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+    List<PointLatLng> result = await polylinePoints?.getRouteBetweenCoordinates(
+        kGoogleApiKeyDirections,
+        position.latitude,
+        position.longitude,
+        _destinationLatitude,
+        _destinationLongitude);
+
+    if (result.isNotEmpty) {
+      // loop through all PointLatLng points and convert them
+      // to a list of LatLng, required by the Polyline
+      result.forEach((PointLatLng point) {
+        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+      });
+    }
+
+    setState(() {
+      // create a Polyline instance
+      // with an id, an RGB color and the list of LatLng pairs
+      Polyline polyline = Polyline(
+          polylineId: PolylineId("poly"),
+          color: Color.fromARGB(255, 40, 122, 198),
+          points: polylineCoordinates);
+
+      // add the constructed polyline as a set of points
+      // to the polyline set, which will eventually
+      // end up showing up on the map
+      _polylines.add(polyline);
+    });
+    LatLng south = LatLng(position.latitude, position.longitude);
+    LatLng north = LatLng(_destinationLatitude, _destinationLongitude);
+    print(south.latitude);
+    print(north.latitude);
+
+    if (position.latitude >= _destinationLatitude) {
+      checkIfPlDl = true;
+    } else {
+      checkIfPlDl = false;
+    }
+    print(checkIfPlDl);
+    _controller.moveCamera(CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+            southwest: checkIfPlDl ? north : south,
+            northeast: checkIfPlDl ? south : north),
+        120));
   }
 
   @override
@@ -286,6 +357,7 @@ class _MapState extends State<Map> {
             circles: Set.of((circle != null) ? [circle] : []),
             myLocationButtonEnabled: false,
             myLocationEnabled: true,
+            polylines: _polylines,
             onMapCreated: (GoogleMapController controller) {
               _controller = controller;
               setMapStyle();
