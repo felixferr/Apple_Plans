@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:geoloc/models/detailsTravel.dart';
 import 'dart:async';
 import 'dart:collection';
 
@@ -13,6 +16,9 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:google_maps_webservice/places.dart' as G;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+
+import 'package:geoloc/credentials.dart';
+import 'package:dio/dio.dart';
 
 class Map extends StatefulWidget {
   @override
@@ -32,6 +38,12 @@ class _MapState extends State<Map> {
   String searchAddress;
   bool checkIfItineraire = false;
   bool onTapSearch = false;
+  String retrieveFormatAdress;
+  LatLng south;
+  LatLng north;
+  Dio dio = new Dio();
+  String distanceTravel;
+  String durationTravel;
 
   double _destinationLatitude;
   double _destinationLongitude;
@@ -39,6 +51,7 @@ class _MapState extends State<Map> {
   Set<Polyline> _polylines = {};
   List<LatLng> polylineCoordinates = [];
   PolylinePoints polylinePoints = PolylinePoints();
+  DetailsTravel detailsTravel = DetailsTravel();
 
   void initState() {
     _getUserLocation();
@@ -185,9 +198,11 @@ class _MapState extends State<Map> {
       });
 
       searchAddress = p.description;
+      retrieveFormatAdress =
+          searchAddress.substring(0, searchAddress.indexOf(','));
+
       _setMarkerIcon();
       await searchAndNavigate();
-      print(searchAddress);
 
       //  var address = await Geocoder.local.findAddressesFromQuery(p.description);
 
@@ -241,14 +256,40 @@ class _MapState extends State<Map> {
   }
 
   // display view itineraire on sliding panel
+  bool checkIfSelectItineraire = false;
 
   Widget detailsLocation() {
     return checkIfItineraire
         ? Column(
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      checkIfSelectItineraire
+                          ? Text(
+                              'Vers',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: MediaQuery.of(context).size.height *
+                                      0.022),
+                            )
+                          : SizedBox.shrink(),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.01,
+                      ),
+                      Text(
+                        retrieveFormatAdress,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize:
+                                MediaQuery.of(context).size.height * 0.02),
+                      )
+                    ],
+                  ),
                   RawMaterialButton(
                     shape: CircleBorder(),
                     fillColor: Color.fromRGBO(0, 0, 0, 0.2),
@@ -268,26 +309,124 @@ class _MapState extends State<Map> {
                   )
                 ],
               ),
+              checkIfSelectItineraire
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'De',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.015,
+                        ),
+                        Text(
+                          'Ma position',
+                          style:
+                              TextStyle(color: Colors.blue[500], fontSize: 20),
+                        )
+                      ],
+                    )
+                  : SizedBox.shrink(),
+              checkIfSelectItineraire
+                  ? Divider(
+                      color: Colors.grey,
+                    )
+                  : SizedBox.shrink(),
               SizedBox(
                 height: 20,
               ),
-              Container(
-                width: MediaQuery.of(context).size.width * 0.95,
-                height: MediaQuery.of(context).size.height * 0.06,
-                child: FlatButton(
-                  color: Color.fromARGB(255, 40, 122, 198),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6.0),
-                  ),
-                  child: Text(
-                    'Itinéraire',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onPressed: () {
-                    setPolylines();
-                  },
-                ),
+              checkIfSelectItineraire
+                  ? Row(
+                      children: <Widget>[
+                        Text(
+                          durationTravel,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize:
+                                  MediaQuery.of(context).size.height * 0.022),
+                        ),
+                      ],
+                    )
+                  : SizedBox.shrink(),
+              checkIfSelectItineraire
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Text(
+                              distanceTravel,
+                              style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: MediaQuery.of(context).size.height *
+                                      0.018),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 7.0, left: 5),
+                              child: Text(
+                                '.',
+                                style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize:
+                                        MediaQuery.of(context).size.height *
+                                            0.018),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.15,
+                          height: MediaQuery.of(context).size.height * 0.06,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.green[600]),
+                          child: FlatButton(
+                            child: Text(
+                              'OK',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                      ],
+                    )
+                  : SizedBox.shrink(),
+              checkIfSelectItineraire
+                  ? SizedBox.shrink()
+                  : Container(
+                      width: MediaQuery.of(context).size.width * 0.95,
+                      height: MediaQuery.of(context).size.height * 0.06,
+                      child: FlatButton(
+                        color: Color.fromARGB(255, 40, 122, 198),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                        ),
+                        child: Text(
+                          'Itinéraire',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        onPressed: () async {
+                          checkIfSelectItineraire = true;
+                          await setPolylines();
+                        },
+                      ),
+                    ),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.018,
               ),
+              checkIfSelectItineraire
+                  ? SizedBox.shrink()
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          child: Text('Adresse'),
+                        ),
+                      ],
+                    ),
+              Text(searchAddress, style: TextStyle(color: Colors.white)),
             ],
           )
         : SizedBox.shrink();
@@ -304,6 +443,11 @@ class _MapState extends State<Map> {
         position.longitude,
         _destinationLatitude,
         _destinationLongitude);
+
+    await getDistance(position.latitude, position.longitude,
+        _destinationLatitude, _destinationLongitude);
+    await getDuration(position.latitude, position.longitude,
+        _destinationLatitude, _destinationLongitude);
 
     if (result.isNotEmpty) {
       // loop through all PointLatLng points and convert them
@@ -342,6 +486,29 @@ class _MapState extends State<Map> {
             southwest: checkIfPlDl ? north : south,
             northeast: checkIfPlDl ? south : north),
         120));
+  }
+
+  Future<String> getDistance(currentLocationLat, currentLocationLong,
+      _destinationLatitude, _destinationLongitude) async {
+    String url =
+        "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${currentLocationLat},${currentLocationLong}&destinations=${_destinationLatitude},${_destinationLongitude}&language=fr-FR&key=$kGoogleApiKey";
+    Response response = await dio.get(url);
+
+    String distance =
+        response.data["rows"][0]["elements"][0]["distance"]["text"];
+    distanceTravel = distance;
+  }
+
+  Future<String> getDuration(currentLocationLat, currentLocationLong,
+      _destinationLatitude, _destinationLongitude) async {
+    String url =
+        "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${currentLocationLat},${currentLocationLong}&destinations=${_destinationLatitude},${_destinationLongitude}&language=fr-FR&key=$kGoogleApiKey";
+    Response response = await dio.get(url);
+
+    String duration =
+        response.data["rows"][0]["elements"][0]["duration"]["text"];
+    durationTravel = duration;
+    print(response);
   }
 
   @override

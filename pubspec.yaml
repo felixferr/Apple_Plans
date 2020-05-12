@@ -29,6 +29,8 @@ dependencies:
   location: ^3.0.2
   flutter_google_places: ^0.2.5
   flutter_polyline_points: ^0.1.0
+  dio: ^3.0.9
+
 
 
 
