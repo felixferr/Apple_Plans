@@ -97,70 +97,75 @@ class _MapState extends State<Map> {
   // SearchBar
 
   Widget searchBar() {
-    return checkIfItineraire
+    return checkIfOk
         ? SizedBox.shrink()
-        : Container(
-            height: MediaQuery.of(context).size.height * 0.06,
-            width: double.infinity,
-            child: Center(
-              child: TextField(
-                onTap: () async {
-                  setState(() {
-                    onTapSearch = true;
-                  });
+        : checkIfItineraire
+            ? SizedBox.shrink()
+            : Container(
+                height: MediaQuery.of(context).size.height * 0.06,
+                width: double.infinity,
+                child: Center(
+                  child: TextField(
+                    onTap: () async {
+                      setState(() {
+                        onTapSearch = true;
+                      });
 
-                  await _pc.open();
+                      await _pc.open();
 
-                  G.Prediction p = await PlacesAutocomplete.show(
-                      context: context,
-                      apiKey: kGoogleApiKey,
-                      language: "fr",
-                      mode: Mode.overlay,
-                      logo: Container(height: 0),
-                      components: [G.Component(G.Component.country, "fr")]);
-                  displayPrediction(p);
-                },
-                decoration: InputDecoration(
-                  fillColor: Colors.grey[400],
-                  contentPadding: EdgeInsets.symmetric(vertical: 15.0),
-                  border: new OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(
-                      const Radius.circular(10.0),
+                      G.Prediction p = await PlacesAutocomplete.show(
+                          context: context,
+                          apiKey: kGoogleApiKey,
+                          language: "fr",
+                          mode: Mode.overlay,
+                          logo: Container(height: 0),
+                          components: [G.Component(G.Component.country, "fr")]);
+                      displayPrediction(p);
+                    },
+                    decoration: InputDecoration(
+                      fillColor: Colors.grey[400],
+                      contentPadding: EdgeInsets.symmetric(vertical: 15.0),
+                      border: new OutlineInputBorder(
+                        borderRadius: const BorderRadius.all(
+                          const Radius.circular(10.0),
+                        ),
+                      ),
+                      hintText: 'Rechercher lieu ou adresse',
+                      prefixIcon: IconButton(
+                        icon: Icon(
+                          Icons.search,
+                          size: 30.0,
+                        ),
+                        onPressed: () {},
+                      ),
+                      filled: true,
                     ),
                   ),
-                  hintText: 'Rechercher lieu ou adresse',
-                  prefixIcon: IconButton(
-                    icon: Icon(
-                      Icons.search,
-                      size: 30.0,
-                    ),
-                    onPressed: () {},
-                  ),
-                  filled: true,
                 ),
-              ),
-            ),
-          );
+              );
   }
 
   //iconLocation
 
   Widget iconLocation() {
-    return Positioned(
-      left: 360,
-      top: 50,
-      child: Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10), color: Colors.black54),
-        child: IconButton(
-          icon: Icon(
-            Icons.navigation,
-            color: Colors.white,
-          ),
-          onPressed: () => _getUserLocation(),
-        ),
-      ),
-    );
+    return checkIfOk
+        ? SizedBox.shrink()
+        : Positioned(
+            left: 360,
+            top: 50,
+            child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.black54),
+              child: IconButton(
+                icon: Icon(
+                  Icons.navigation,
+                  color: Colors.white,
+                ),
+                onPressed: () => _getUserLocation(),
+              ),
+            ),
+          );
   }
 
 // Slide panel
@@ -179,6 +184,7 @@ class _MapState extends State<Map> {
               ),
               searchBar(),
               detailsLocation(),
+              viewTravel(),
               SizedBox(
                 height: 24,
               ),
@@ -259,176 +265,184 @@ class _MapState extends State<Map> {
   bool checkIfSelectItineraire = false;
 
   Widget detailsLocation() {
-    return checkIfItineraire
-        ? Column(
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return checkIfOk
+        ? SizedBox.shrink()
+        : checkIfItineraire
+            ? Column(
                 children: <Widget>[
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      checkIfSelectItineraire
-                          ? Text(
-                              'Vers',
+                      Row(
+                        children: <Widget>[
+                          checkIfSelectItineraire
+                              ? Text(
+                                  'Vers',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                              0.022),
+                                )
+                              : SizedBox.shrink(),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.01,
+                          ),
+                          Text(
+                            retrieveFormatAdress,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize:
+                                    MediaQuery.of(context).size.height * 0.02),
+                          )
+                        ],
+                      ),
+                      RawMaterialButton(
+                        shape: CircleBorder(),
+                        fillColor: Color.fromRGBO(0, 0, 0, 0.2),
+                        elevation: 1.0,
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            checkIfItineraire = false;
+                            checkIfSelectItineraire = false;
+
+                            polylineCoordinates.clear();
+                            _polylines.clear();
+                            _markers.clear();
+                          });
+                        },
+                      )
+                    ],
+                  ),
+                  checkIfSelectItineraire
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'De',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 20),
+                            ),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.015,
+                            ),
+                            Text(
+                              'Ma position',
+                              style: TextStyle(
+                                  color: Colors.blue[500], fontSize: 20),
+                            )
+                          ],
+                        )
+                      : SizedBox.shrink(),
+                  checkIfSelectItineraire
+                      ? Divider(
+                          color: Colors.grey,
+                        )
+                      : SizedBox.shrink(),
+                  SizedBox(
+                    height: 20,
+                  ),
+                  checkIfSelectItineraire
+                      ? Row(
+                          children: <Widget>[
+                            Text(
+                              durationTravel,
                               style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: MediaQuery.of(context).size.height *
                                       0.022),
-                            )
-                          : SizedBox.shrink(),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.01,
-                      ),
-                      Text(
-                        retrieveFormatAdress,
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize:
-                                MediaQuery.of(context).size.height * 0.02),
-                      )
-                    ],
-                  ),
-                  RawMaterialButton(
-                    shape: CircleBorder(),
-                    fillColor: Color.fromRGBO(0, 0, 0, 0.2),
-                    elevation: 1.0,
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        checkIfItineraire = false;
-                        checkIfSelectItineraire = false;
-
-                        polylineCoordinates.clear();
-                        _polylines.clear();
-                        _markers.clear();
-                      });
-                    },
-                  )
-                ],
-              ),
-              checkIfSelectItineraire
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          'De',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
-                        ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.015,
-                        ),
-                        Text(
-                          'Ma position',
-                          style:
-                              TextStyle(color: Colors.blue[500], fontSize: 20),
-                        )
-                      ],
-                    )
-                  : SizedBox.shrink(),
-              checkIfSelectItineraire
-                  ? Divider(
-                      color: Colors.grey,
-                    )
-                  : SizedBox.shrink(),
-              SizedBox(
-                height: 20,
-              ),
-              checkIfSelectItineraire
-                  ? Row(
-                      children: <Widget>[
-                        Text(
-                          durationTravel,
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize:
-                                  MediaQuery.of(context).size.height * 0.022),
-                        ),
-                      ],
-                    )
-                  : SizedBox.shrink(),
-              checkIfSelectItineraire
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Text(
-                              distanceTravel,
-                              style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: MediaQuery.of(context).size.height *
-                                      0.018),
                             ),
                           ],
-                        ),
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.15,
+                        )
+                      : SizedBox.shrink(),
+                  checkIfSelectItineraire
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Text(
+                                  distanceTravel,
+                                  style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                              0.018),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.15,
+                              height: MediaQuery.of(context).size.height * 0.06,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.green[600]),
+                              child: FlatButton(
+                                child: Text(
+                                  'OK',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onPressed: () {
+                                  _getUserLocation();
+                                  checkIfOk = true;
+                                },
+                              ),
+                            )
+                          ],
+                        )
+                      : SizedBox.shrink(),
+                  checkIfSelectItineraire
+                      ? SizedBox.shrink()
+                      : Container(
+                          width: MediaQuery.of(context).size.width * 0.95,
                           height: MediaQuery.of(context).size.height * 0.06,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.green[600]),
                           child: FlatButton(
+                            color: Color.fromARGB(255, 40, 122, 198),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6.0),
+                            ),
                             child: Text(
-                              'OK',
+                              'Itinéraire',
                               style: TextStyle(color: Colors.white),
                             ),
-                            onPressed: () => _getUserLocation(),
+                            onPressed: () async {
+                              checkIfSelectItineraire = true;
+                              await setPolylines();
+                            },
                           ),
-                        )
-                      ],
-                    )
-                  : SizedBox.shrink(),
-              checkIfSelectItineraire
-                  ? SizedBox.shrink()
-                  : Container(
-                      width: MediaQuery.of(context).size.width * 0.95,
-                      height: MediaQuery.of(context).size.height * 0.06,
-                      child: FlatButton(
-                        color: Color.fromARGB(255, 40, 122, 198),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6.0),
                         ),
-                        child: Text(
-                          'Itinéraire',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        onPressed: () async {
-                          checkIfSelectItineraire = true;
-                          await setPolylines();
-                        },
-                      ),
-                    ),
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.018,
-              ),
-              checkIfSelectItineraire
-                  ? SizedBox.shrink()
-                  : Column(
-                      children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.018,
+                  ),
+                  checkIfSelectItineraire
+                      ? SizedBox.shrink()
+                      : Column(
                           children: <Widget>[
-                            Container(
-                              child: Text(
-                                'Adresse',
-                                style: TextStyle(color: Colors.white70),
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: <Widget>[
+                                Container(
+                                  child: Text(
+                                    'Adresse',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                ),
+                              ],
                             ),
+                            Text(searchAddress,
+                                style: TextStyle(color: Colors.white)),
                           ],
                         ),
-                        Text(searchAddress,
-                            style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-            ],
-          )
-        : SizedBox.shrink();
+                ],
+              )
+            : SizedBox.shrink();
   }
 
   bool checkIfPlDl = false;
@@ -510,10 +524,55 @@ class _MapState extends State<Map> {
     print(response);
   }
 
+  bool checkIfOk = false;
+
+  Widget viewTravel() {
+    return checkIfOk
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(durationTravel,
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                distanceTravel,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Container(
+                width: MediaQuery.of(context).size.width * 0.15,
+                height: MediaQuery.of(context).size.height * 0.06,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.red[600]),
+                child: FlatButton(
+                  child: Text(
+                    'Fin',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () {
+                    _getUserLocation();
+                    checkIfOk = false;
+                    checkIfItineraire = false;
+                    checkIfSelectItineraire = false;
+                    polylineCoordinates.clear();
+                    _polylines.clear();
+                    _markers.clear();
+                  },
+                ),
+              )
+            ],
+          )
+        : SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     _panelHeightOpen = MediaQuery.of(context).size.height * 0.925;
     return Scaffold(
+      appBar: checkIfOk
+          ? AppBar(
+              title: Text('Démarrez'),
+            )
+          : null,
       body: Stack(
         children: <Widget>[
           GoogleMap(
@@ -537,7 +596,7 @@ class _MapState extends State<Map> {
             parallaxEnabled: true,
             parallaxOffset: .5,
             controller: _pc,
-            color: Color.fromRGBO(84, 85, 85, 0.8),
+            color: checkIfOk ? Colors.white : Color.fromRGBO(84, 85, 85, 0.8),
             panelBuilder: (sc) => onTapSearch ? SizedBox.shrink() : _panel(sc),
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(18.0),
