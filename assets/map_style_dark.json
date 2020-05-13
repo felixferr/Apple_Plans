@@ -16,18 +16,10 @@
     ]
   },
   {
-    "elementType": "labels.text",
-    "stylers": [
-      {
-        "color": "#2f44e9"
-      }
-    ]
-  },
-  {
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#6e4eff"
+        "color": "#757575"
       }
     ]
   },
@@ -84,28 +76,11 @@
     ]
   },
   {
-    "featureType": "poi.business",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
     "featureType": "poi.park",
     "elementType": "geometry",
     "stylers": [
       {
         "color": "#181818"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text",
-    "stylers": [
-      {
-        "visibility": "off"
       }
     ]
   },
@@ -191,74 +166,11 @@
     ]
   },
   {
-    "featureType": "transit.station.bus",
-    "elementType": "geometry.stroke",
-    "stylers": [
-      {
-        "color": "#f4f600"
-      }
-    ]
-  },
-  {
     "featureType": "water",
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#000000"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry.fill",
-    "stylers": [
-      {
-        "color": "#ff3a61"
-      },
-      {
-        "visibility": "on"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry.stroke",
-    "stylers": [
-      {
-        "color": "#fe570b"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels",
-    "stylers": [
-      {
-        "color": "#44e300"
-      },
-      {
-        "visibility": "simplified"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "color": "#f8006a"
-      },
-      {
-        "weight": 2.5
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text",
-    "stylers": [
-      {
-        "color": "#00e300"
+        "color": "#39588a"
       }
     ]
   },
@@ -267,16 +179,7 @@
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#00e600"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#00e600"
+        "color": "#3d3d3d"
       }
     ]
   }

@@ -55,6 +55,7 @@ class _MapState extends State<Map> {
 
   void initState() {
     _getUserLocation();
+
     super.initState();
   }
 
@@ -187,7 +188,20 @@ class _MapState extends State<Map> {
             controller: sc,
             children: <Widget>[
               SizedBox(
-                height: 12.0,
+                height: MediaQuery.of(context).size.height * 0.006,
+              ),
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.006,
+                  width: MediaQuery.of(context).size.width * 0.1,
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Color.fromRGBO(188, 188, 188, 0.5)),
+                ),
+              ),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.006,
               ),
               searchBar(),
               detailsLocation(),
@@ -202,6 +216,11 @@ class _MapState extends State<Map> {
 
   // if tap on address => Naviguate
 
+  String addressCity;
+  String addressRegion;
+  String addressStreet;
+  String addressState;
+
   Future<Null> displayPrediction(G.Prediction p) async {
     if (p != null) {
       _pc.close();
@@ -211,11 +230,12 @@ class _MapState extends State<Map> {
       });
 
       searchAddress = p.description;
-      retrieveFormatAdress =
-          searchAddress.substring(0, searchAddress.indexOf(','));
+      addressStreet = searchAddress.substring(0, searchAddress.indexOf(','));
+      retrieveFormatAdress = searchAddress.substring(
+          searchAddress.indexOf(',') + 2, searchAddress.length);
 
       _setMarkerIcon();
-      await searchAndNavigate();
+      searchAndNavigate();
 
       //  var address = await Geocoder.local.findAddressesFromQuery(p.description);
 
@@ -264,6 +284,13 @@ class _MapState extends State<Map> {
     l.Geolocator().placemarkFromAddress(searchAddress).then((value) async {
       var latLng =
           LatLng(value[0].position.latitude, value[0].position.longitude);
+      l.Position position = await l.Geolocator()
+          .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+
+      await getDistance(position.latitude, position.longitude,
+          value[0].position.latitude, value[0].position.longitude);
+      await getDuration(position.latitude, position.longitude,
+          value[0].position.latitude, value[0].position.longitude);
 
       setState(() {
         _markers.add(
@@ -313,13 +340,25 @@ class _MapState extends State<Map> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.01,
                           ),
-                          Text(
-                            retrieveFormatAdress,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize:
-                                    MediaQuery.of(context).size.height * 0.02),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                addressStreet,
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize:
+                                        MediaQuery.of(context).size.height *
+                                            0.02),
+                              ),
+                              checkIfSelectItineraire
+                                  ? SizedBox.shrink()
+                                  : Text(
+                                      distanceTravel ?? '',
+                                      style: TextStyle(color: Colors.white),
+                                    )
+                            ],
                           )
                         ],
                       ),
@@ -356,10 +395,13 @@ class _MapState extends State<Map> {
                             SizedBox(
                               width: MediaQuery.of(context).size.width * 0.015,
                             ),
-                            Text(
-                              'Ma position',
-                              style: TextStyle(
-                                  color: Colors.blue[500], fontSize: 20),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1.0),
+                              child: Text(
+                                'Ma position',
+                                style: TextStyle(
+                                    color: Colors.blue[700], fontSize: 18),
+                              ),
                             )
                           ],
                         )
@@ -433,9 +475,21 @@ class _MapState extends State<Map> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6.0),
                             ),
-                            child: Text(
-                              'Itinéraire',
-                              style: TextStyle(color: Colors.white),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Text(
+                                  'Itinéraire',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16),
+                                ),
+                                Text(
+                                  durationTravel ?? '',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ],
                             ),
                             onPressed: () async {
                               checkIfSelectItineraire = true;
@@ -449,6 +503,7 @@ class _MapState extends State<Map> {
                   checkIfSelectItineraire
                       ? SizedBox.shrink()
                       : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Row(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -461,7 +516,9 @@ class _MapState extends State<Map> {
                                 ),
                               ],
                             ),
-                            Text(searchAddress,
+                            Text(addressStreet,
+                                style: TextStyle(color: Colors.white)),
+                            Text(retrieveFormatAdress,
                                 style: TextStyle(color: Colors.white)),
                           ],
                         ),
@@ -523,7 +580,7 @@ class _MapState extends State<Map> {
         LatLngBounds(
             southwest: checkIfPlDl ? north : south,
             northeast: checkIfPlDl ? south : north),
-        120));
+        150));
   }
 
   Future<String> getDistance(currentLocationLat, currentLocationLong,
@@ -532,9 +589,8 @@ class _MapState extends State<Map> {
         "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${currentLocationLat},${currentLocationLong}&destinations=${_destinationLatitude},${_destinationLongitude}&language=fr-FR&key=$kGoogleApiKey";
     Response response = await dio.get(url);
 
-    String distance =
+    distanceTravel =
         response.data["rows"][0]["elements"][0]["distance"]["text"];
-    distanceTravel = distance;
   }
 
   Future<String> getDuration(currentLocationLat, currentLocationLong,
@@ -543,9 +599,9 @@ class _MapState extends State<Map> {
         "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${currentLocationLat},${currentLocationLong}&destinations=${_destinationLatitude},${_destinationLongitude}&language=fr-FR&key=$kGoogleApiKey";
     Response response = await dio.get(url);
 
-    String duration =
+    durationTravel =
         response.data["rows"][0]["elements"][0]["duration"]["text"];
-    durationTravel = duration;
+
     print(response);
   }
 
@@ -557,10 +613,10 @@ class _MapState extends State<Map> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Text(durationTravel,
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
               Text(
                 distanceTravel,
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
               Container(
                 width: MediaQuery.of(context).size.width * 0.15,
@@ -571,7 +627,10 @@ class _MapState extends State<Map> {
                 child: FlatButton(
                   child: Text(
                     'Fin',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18),
                   ),
                   onPressed: () {
                     setMapStyle();
@@ -597,6 +656,7 @@ class _MapState extends State<Map> {
       appBar: checkIfOk
           ? AppBar(
               title: Text('Démarrez'),
+              backgroundColor: Colors.black87,
             )
           : null,
       body: Stack(
@@ -623,7 +683,7 @@ class _MapState extends State<Map> {
             parallaxEnabled: true,
             parallaxOffset: .5,
             controller: _pc,
-            color: checkIfOk ? Colors.white : Color.fromRGBO(84, 85, 85, 0.8),
+            color: checkIfOk ? Colors.white : Color.fromRGBO(17, 17, 17, 0.9),
             panelBuilder: (sc) => onTapSearch ? SizedBox.shrink() : _panel(sc),
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(18.0),
