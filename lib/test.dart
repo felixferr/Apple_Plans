@@ -36,7 +36,7 @@ class _GMapState extends State<GMap> {
 
   void _toggleMapStyle() async {
     String style = await DefaultAssetBundle.of(context)
-        .loadString('assets/map_style.json');
+        .loadString('assets/map_style_dark.json');
 
     if (_showMapStyle) {
       _mapController.setMapStyle(style);

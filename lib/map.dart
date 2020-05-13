@@ -77,6 +77,8 @@ class _MapState extends State<Map> {
     setState(() {
       checkIfItineraire = false;
     });
+    Uint8List imageData = await _setNavigationIcon();
+    updateIcon(imageData);
 
     l.Position position = await l.Geolocator()
         .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
@@ -90,8 +92,13 @@ class _MapState extends State<Map> {
 
   void setMapStyle() async {
     String style = await DefaultAssetBundle.of(context)
-        .loadString('assets/map_style.json');
+        .loadString('assets/map_style_dark.json');
     _controller.setMapStyle(style);
+    if (checkIfOk) {
+      _controller.setMapStyle(null);
+    } else {
+      _controller.setMapStyle(style);
+    }
   }
 
   // SearchBar
@@ -230,6 +237,29 @@ class _MapState extends State<Map> {
         ImageConfiguration(), 'assets/marker.png');
   }
 
+  BitmapDescriptor navigationIcon;
+  Future<Uint8List> _setNavigationIcon() async {
+    ByteData byteData =
+        await DefaultAssetBundle.of(context).load("assets/navigation-icon.png");
+    return byteData.buffer.asUint8List();
+  }
+
+  Future updateIcon(Uint8List imageData) async {
+    l.Position position = await l.Geolocator()
+        .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+    this.setState(() {
+      marker = Marker(
+          markerId: MarkerId("home"),
+          position: LatLng(position.latitude, position.longitude),
+          rotation: position.heading,
+          draggable: false,
+          zIndex: 2,
+          flat: true,
+          anchor: Offset(0.5, 0.5),
+          icon: BitmapDescriptor.fromBytes(imageData));
+    });
+  }
+
   void searchAndNavigate() {
     l.Geolocator().placemarkFromAddress(searchAddress).then((value) async {
       var latLng =
@@ -253,12 +283,6 @@ class _MapState extends State<Map> {
       _destinationLatitude = value[0].position.latitude;
       _destinationLongitude = value[0].position.longitude;
     });
-  }
-
-  Future<Uint8List> getMarkerSearchLocation() async {
-    ByteData byteData =
-        await DefaultAssetBundle.of(context).load("assets/marker.png");
-    return byteData.buffer.asUint8List();
   }
 
   // display view itineraire on sliding panel
@@ -389,7 +413,8 @@ class _MapState extends State<Map> {
                                   'OK',
                                   style: TextStyle(color: Colors.white),
                                 ),
-                                onPressed: () {
+                                onPressed: () async {
+                                  setMapStyle();
                                   _getUserLocation();
                                   checkIfOk = true;
                                 },
@@ -549,6 +574,7 @@ class _MapState extends State<Map> {
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () {
+                    setMapStyle();
                     _getUserLocation();
                     checkIfOk = false;
                     checkIfItineraire = false;
@@ -578,7 +604,8 @@ class _MapState extends State<Map> {
           GoogleMap(
             mapType: MapType.normal,
             initialCameraPosition: initialLocation,
-            markers: _markers,
+            markers:
+                checkIfOk ? Set.of((marker != null) ? [marker] : []) : _markers,
             circles: Set.of((circle != null) ? [circle] : []),
             myLocationButtonEnabled: false,
             myLocationEnabled: true,
