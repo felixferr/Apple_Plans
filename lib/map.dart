@@ -1,24 +1,18 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:geoloc/models/detailsTravel.dart';
 import 'dart:async';
 import 'dart:collection';
-
 import 'dart:typed_data';
 import 'credentials.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 import 'package:geolocator/geolocator.dart' as l;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:google_maps_webservice/places.dart' as G;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-
 import 'package:geoloc/credentials.dart';
 import 'package:dio/dio.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class Map extends StatefulWidget {
   @override
@@ -51,7 +45,6 @@ class _MapState extends State<Map> {
   Set<Polyline> _polylines = {};
   List<LatLng> polylineCoordinates = [];
   PolylinePoints polylinePoints = PolylinePoints();
-  DetailsTravel detailsTravel = DetailsTravel();
 
   void initState() {
     _getUserLocation();
@@ -159,8 +152,8 @@ class _MapState extends State<Map> {
     return checkIfOk
         ? SizedBox.shrink()
         : Positioned(
-            left: 360,
-            top: 50,
+            left: MediaQuery.of(context).size.width * 0.85,
+            top: MediaQuery.of(context).size.height * 0.14,
             child: Container(
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
@@ -289,6 +282,7 @@ class _MapState extends State<Map> {
 
       await getDistance(position.latitude, position.longitude,
           value[0].position.latitude, value[0].position.longitude);
+
       await getDuration(position.latitude, position.longitude,
           value[0].position.latitude, value[0].position.longitude);
 
@@ -343,14 +337,18 @@ class _MapState extends State<Map> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(
-                                addressStreet,
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize:
-                                        MediaQuery.of(context).size.height *
-                                            0.02),
+                              SizedBox(
+                                width: 250,
+                                child: AutoSizeText(
+                                  addressStreet,
+                                  maxLines: 2,
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize:
+                                          MediaQuery.of(context).size.height *
+                                              0.02),
+                                ),
                               ),
                               checkIfSelectItineraire
                                   ? SizedBox.shrink()
@@ -567,19 +565,13 @@ class _MapState extends State<Map> {
     });
     LatLng south = LatLng(position.latitude, position.longitude);
     LatLng north = LatLng(_destinationLatitude, _destinationLongitude);
-    print(south.latitude);
-    print(north.latitude);
 
-    if (position.latitude >= _destinationLatitude) {
-      checkIfPlDl = true;
-    } else {
-      checkIfPlDl = false;
-    }
-    print(checkIfPlDl);
     _controller.moveCamera(CameraUpdate.newLatLngBounds(
         LatLngBounds(
-            southwest: checkIfPlDl ? north : south,
-            northeast: checkIfPlDl ? south : north),
+            southwest:
+                position.latitude >= _destinationLatitude ? north : south,
+            northeast:
+                position.latitude >= _destinationLatitude ? south : north),
         150));
   }
 
@@ -601,8 +593,6 @@ class _MapState extends State<Map> {
 
     durationTravel =
         response.data["rows"][0]["elements"][0]["duration"]["text"];
-
-    print(response);
   }
 
   bool checkIfOk = false;
@@ -613,13 +603,17 @@ class _MapState extends State<Map> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Text(durationTravel,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: MediaQuery.of(context).size.height * 0.020)),
               Text(
                 distanceTravel,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: MediaQuery.of(context).size.height * 0.020),
               ),
               Container(
-                width: MediaQuery.of(context).size.width * 0.15,
+                width: MediaQuery.of(context).size.width * 0.18,
                 height: MediaQuery.of(context).size.height * 0.06,
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
@@ -630,7 +624,7 @@ class _MapState extends State<Map> {
                     style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 18),
+                        fontSize: MediaQuery.of(context).size.height * 0.020),
                   ),
                   onPressed: () {
                     setMapStyle();
@@ -666,7 +660,6 @@ class _MapState extends State<Map> {
             initialCameraPosition: initialLocation,
             markers:
                 checkIfOk ? Set.of((marker != null) ? [marker] : []) : _markers,
-            circles: Set.of((circle != null) ? [circle] : []),
             myLocationButtonEnabled: false,
             myLocationEnabled: true,
             polylines: _polylines,
