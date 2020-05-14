@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:geoloc/models/detailsTravel.dart';
 import 'credentials.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -21,7 +19,6 @@ class Map extends StatefulWidget {
 }
 
 class _MapState extends State<Map> {
-  Marker marker;
   GoogleMapController _controller;
   PanelController _pc = new PanelController();
   double _panelHeightOpen;
