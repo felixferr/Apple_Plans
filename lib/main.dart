@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Clone IOS plans',
+      title: 'Clone Apple Plans',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
