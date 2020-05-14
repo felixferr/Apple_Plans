@@ -1,2 +1,7 @@
-![alt-text-1](images/searchBar.png) ![alt-text-2](images/addressMarker.png)
-![alt-text-3](images/largeView.png) ![alt-text-4](images/navigation.png)
+
+<p align="center">
+  <img src="images/searchBar.png" width="256" hspace="4">
+  <img src="images/addressMarker.png" width="256" hspace="4">
+  <img src="images/largeView.png" width="256" hspace="4">
+  <img src="images/navigation.png" width="256" hspace="4">
+</p>
