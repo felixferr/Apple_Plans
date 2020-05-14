@@ -64,8 +64,6 @@ class _MapState extends State<Map> {
     setState(() {
       checkIfItineraire = false;
     });
-    Uint8List imageData = await _setNavigationIcon();
-    updateIcon(imageData);
 
     geo.Position position = await geo.Geolocator()
         .getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
@@ -227,29 +225,6 @@ class _MapState extends State<Map> {
   void _setMarkerIcon() async {
     _markerIcon = await BitmapDescriptor.fromAssetImage(
         ImageConfiguration(), 'assets/marker.png');
-  }
-
-  BitmapDescriptor navigationIcon;
-  Future<Uint8List> _setNavigationIcon() async {
-    ByteData byteData =
-        await DefaultAssetBundle.of(context).load("assets/navigation-icon.png");
-    return byteData.buffer.asUint8List();
-  }
-
-  Future updateIcon(Uint8List imageData) async {
-    geo.Position position = await geo.Geolocator()
-        .getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
-    this.setState(() {
-      marker = Marker(
-          markerId: MarkerId("currentLocation"),
-          position: LatLng(position.latitude, position.longitude),
-          rotation: position.heading,
-          draggable: false,
-          zIndex: 2,
-          flat: true,
-          anchor: Offset(0.5, 0.5),
-          icon: BitmapDescriptor.fromBytes(imageData));
-    });
   }
 
   // DISPLAY VIEW BETWEEN USER LOCATION AND THE ADDRESS
@@ -627,8 +602,7 @@ class _MapState extends State<Map> {
           GoogleMap(
             mapType: MapType.normal,
             initialCameraPosition: initialLocation,
-            markers:
-                checkIfOk ? Set.of((marker != null) ? [marker] : []) : _markers,
+            markers: _markers,
             myLocationButtonEnabled: false,
             myLocationEnabled: true,
             polylines: _polylines,
