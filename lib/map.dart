@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geoloc/models/detailsTravel.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
@@ -11,7 +12,6 @@ import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:google_maps_webservice/places.dart' as G;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geoloc/credentials.dart';
-import 'package:dio/dio.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
 class Map extends StatefulWidget {
@@ -20,52 +20,44 @@ class Map extends StatefulWidget {
 }
 
 class _MapState extends State<Map> {
-  StreamSubscription _locationSubscription;
   Marker marker;
-  Circle circle;
   GoogleMapController _controller;
   PanelController _pc = new PanelController();
-  final addressController = TextEditingController();
   double _panelHeightOpen;
   double _panelHeightClosed = 95.0;
   double _panelHeightItineraire = 220;
-  String searchAddress;
-  bool checkIfItineraire = false;
-  bool onTapSearch = false;
-  String retrieveFormatAdress;
-  LatLng south;
-  LatLng north;
-  Dio dio = new Dio();
-  String distanceTravel;
-  String durationTravel;
-
   double _destinationLatitude;
   double _destinationLongitude;
+  bool checkIfItineraire = false;
+  bool onTapSearch = false;
+  bool checkIfSelectItineraire = false;
+  bool checkIfOk = false;
+  String searchAddress;
+  String retrieveFormatAdress;
+  String distanceTravel;
+  String durationTravel;
+  String addressStreet;
 
   Set<Polyline> _polylines = {};
   List<LatLng> polylineCoordinates = [];
   PolylinePoints polylinePoints = PolylinePoints();
+  DetailsTravel detailsTravel = DetailsTravel();
+  BitmapDescriptor _markerIcon;
+  Set<Marker> _markers = HashSet<Marker>();
 
   void initState() {
     _getUserLocation();
-
     super.initState();
   }
 
-  @override
-  void dispose() {
-    if (_locationSubscription != null) {
-      _locationSubscription.cancel();
-    }
-    super.dispose();
-  }
+  // INITIAL POSITION CAMERA
 
   static final CameraPosition initialLocation = CameraPosition(
     target: LatLng(48.8566969, 2.3514616),
     zoom: 14.4746,
   );
 
-  // Get currentlocation
+  // GET CURRENT USER LOCATION
 
   _getUserLocation() async {
     setState(() {
@@ -76,13 +68,12 @@ class _MapState extends State<Map> {
 
     l.Position position = await l.Geolocator()
         .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
-    List<l.Placemark> placemark = await l.Geolocator()
-        .placemarkFromCoordinates(position.latitude, position.longitude);
+
     _controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(position.latitude, position.longitude), zoom: 17.0)));
   }
 
-  //Map Style
+  //TOGGLE MAP STYLE
 
   void setMapStyle() async {
     String style = await DefaultAssetBundle.of(context)
@@ -95,7 +86,7 @@ class _MapState extends State<Map> {
     }
   }
 
-  // SearchBar
+  // SEARCHBAR
 
   Widget searchBar() {
     return checkIfOk
@@ -132,12 +123,9 @@ class _MapState extends State<Map> {
                         ),
                       ),
                       hintText: 'Rechercher lieu ou adresse',
-                      prefixIcon: IconButton(
-                        icon: Icon(
-                          Icons.search,
-                          size: 30.0,
-                        ),
-                        onPressed: () {},
+                      prefixIcon: Icon(
+                        Icons.search,
+                        size: 30.0,
                       ),
                       filled: true,
                     ),
@@ -145,8 +133,6 @@ class _MapState extends State<Map> {
                 ),
               );
   }
-
-  //iconLocation
 
   Widget iconLocation() {
     return checkIfOk
@@ -169,7 +155,7 @@ class _MapState extends State<Map> {
           );
   }
 
-// Slide panel
+  // SLIDING PANEL
 
   Widget _panel(ScrollController sc) {
     return MediaQuery.removePadding(
@@ -207,12 +193,7 @@ class _MapState extends State<Map> {
         ));
   }
 
-  // if tap on address => Naviguate
-
-  String addressCity;
-  String addressRegion;
-  String addressStreet;
-  String addressState;
+  // LIST ADDRESS
 
   Future<Null> displayPrediction(G.Prediction p) async {
     if (p != null) {
@@ -226,12 +207,10 @@ class _MapState extends State<Map> {
       addressStreet = searchAddress.substring(0, searchAddress.indexOf(','));
       retrieveFormatAdress = searchAddress.substring(
           searchAddress.indexOf(',') + 2, searchAddress.length);
-
+      // display marker.png to the address
       _setMarkerIcon();
+      // navigate to the address
       searchAndNavigate();
-
-      //  var address = await Geocoder.local.findAddressesFromQuery(p.description);
-
     } else {
       _pc.close();
       setState(() {
@@ -240,10 +219,7 @@ class _MapState extends State<Map> {
     }
   }
 
-  // set marker location to select adresse by the searchbar
-
-  BitmapDescriptor _markerIcon;
-  Set<Marker> _markers = HashSet<Marker>();
+  // SET MARKER ICON LOCATION TO THE ADDRESS SELECTED ON THE SEARCHBAR
 
   void _setMarkerIcon() async {
     _markerIcon = await BitmapDescriptor.fromAssetImage(
@@ -262,7 +238,7 @@ class _MapState extends State<Map> {
         .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
     this.setState(() {
       marker = Marker(
-          markerId: MarkerId("home"),
+          markerId: MarkerId("currentLocation"),
           position: LatLng(position.latitude, position.longitude),
           rotation: position.heading,
           draggable: false,
@@ -273,6 +249,8 @@ class _MapState extends State<Map> {
     });
   }
 
+  // DISPLAY VIEW BETWEEN USER LOCATION AND THE ADDRESS
+
   void searchAndNavigate() {
     l.Geolocator().placemarkFromAddress(searchAddress).then((value) async {
       var latLng =
@@ -280,11 +258,17 @@ class _MapState extends State<Map> {
       l.Position position = await l.Geolocator()
           .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
 
-      await getDistance(position.latitude, position.longitude,
-          value[0].position.latitude, value[0].position.longitude);
+      distanceTravel = await detailsTravel.getDistance(
+          position.latitude,
+          position.longitude,
+          value[0].position.latitude,
+          value[0].position.longitude);
 
-      await getDuration(position.latitude, position.longitude,
-          value[0].position.latitude, value[0].position.longitude);
+      durationTravel = await detailsTravel.getDuration(
+          position.latitude,
+          position.longitude,
+          value[0].position.latitude,
+          value[0].position.longitude);
 
       setState(() {
         _markers.add(
@@ -306,8 +290,7 @@ class _MapState extends State<Map> {
     });
   }
 
-  // display view itineraire on sliding panel
-  bool checkIfSelectItineraire = false;
+  // DETAILS TRAVEL
 
   Widget detailsLocation() {
     return checkIfOk
@@ -338,7 +321,7 @@ class _MapState extends State<Map> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               SizedBox(
-                                width: 250,
+                                width: 240,
                                 child: AutoSizeText(
                                   addressStreet,
                                   maxLines: 2,
@@ -360,25 +343,26 @@ class _MapState extends State<Map> {
                           )
                         ],
                       ),
-                      RawMaterialButton(
-                        shape: CircleBorder(),
-                        fillColor: Color.fromRGBO(0, 0, 0, 0.2),
-                        elevation: 1.0,
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.grey,
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(100),
+                          color: Color.fromRGBO(0, 0, 0, 0.2),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            checkIfItineraire = false;
-                            checkIfSelectItineraire = false;
-
-                            polylineCoordinates.clear();
-                            _polylines.clear();
-                            _markers.clear();
-                          });
-                        },
-                      )
+                        child: IconButton(
+                          icon: Icon(Icons.close),
+                          color: Colors.grey,
+                          onPressed: () {
+                            setState(() {
+                              checkIfItineraire = false;
+                              checkIfSelectItineraire = false;
+                              _getUserLocation();
+                              polylineCoordinates.clear();
+                              _polylines.clear();
+                              _markers.clear();
+                            });
+                          },
+                        ),
+                      ),
                     ],
                   ),
                   checkIfSelectItineraire
@@ -525,7 +509,7 @@ class _MapState extends State<Map> {
             : SizedBox.shrink();
   }
 
-  bool checkIfPlDl = false;
+  // SET ROUTE WITH POLYLINES
 
   setPolylines() async {
     l.Position position = await l.Geolocator()
@@ -537,10 +521,10 @@ class _MapState extends State<Map> {
         _destinationLatitude,
         _destinationLongitude);
 
-    await getDistance(position.latitude, position.longitude,
-        _destinationLatitude, _destinationLongitude);
-    await getDuration(position.latitude, position.longitude,
-        _destinationLatitude, _destinationLongitude);
+    distanceTravel = await detailsTravel.getDistance(position.latitude,
+        position.longitude, _destinationLatitude, _destinationLongitude);
+    durationTravel = await detailsTravel.getDuration(position.latitude,
+        position.longitude, _destinationLatitude, _destinationLongitude);
 
     if (result.isNotEmpty) {
       // loop through all PointLatLng points and convert them
@@ -563,39 +547,21 @@ class _MapState extends State<Map> {
       // end up showing up on the map
       _polylines.add(polyline);
     });
-    LatLng south = LatLng(position.latitude, position.longitude);
-    LatLng north = LatLng(_destinationLatitude, _destinationLongitude);
+    LatLng userLocation = LatLng(position.latitude, position.longitude);
+    LatLng addressSearch = LatLng(_destinationLatitude, _destinationLongitude);
 
     _controller.moveCamera(CameraUpdate.newLatLngBounds(
         LatLngBounds(
-            southwest:
-                position.latitude >= _destinationLatitude ? north : south,
-            northeast:
-                position.latitude >= _destinationLatitude ? south : north),
+            southwest: position.latitude >= _destinationLatitude
+                ? addressSearch
+                : userLocation,
+            northeast: position.latitude >= _destinationLatitude
+                ? userLocation
+                : addressSearch),
         150));
   }
 
-  Future<String> getDistance(currentLocationLat, currentLocationLong,
-      _destinationLatitude, _destinationLongitude) async {
-    String url =
-        "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${currentLocationLat},${currentLocationLong}&destinations=${_destinationLatitude},${_destinationLongitude}&language=fr-FR&key=$kGoogleApiKey";
-    Response response = await dio.get(url);
-
-    distanceTravel =
-        response.data["rows"][0]["elements"][0]["distance"]["text"];
-  }
-
-  Future<String> getDuration(currentLocationLat, currentLocationLong,
-      _destinationLatitude, _destinationLongitude) async {
-    String url =
-        "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${currentLocationLat},${currentLocationLong}&destinations=${_destinationLatitude},${_destinationLongitude}&language=fr-FR&key=$kGoogleApiKey";
-    Response response = await dio.get(url);
-
-    durationTravel =
-        response.data["rows"][0]["elements"][0]["duration"]["text"];
-  }
-
-  bool checkIfOk = false;
+  // DETAILS VIEW TRAVEL
 
   Widget viewTravel() {
     return checkIfOk

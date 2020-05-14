@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:geoloc/test.dart';
 
 import 'map.dart';
 
@@ -11,7 +10,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Geoloc practice',
+      title: 'Clone IOS plans',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
