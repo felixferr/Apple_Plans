@@ -40,4 +40,4 @@ On the following screens you need to:
 1. Create a file => credentials.dart and put the key in : const kGoogleApiKey = 'YOUR API KEY';
 2. Activate the [Directions API](https://console.cloud.google.com/marketplace/details/google/directions-backend.googleapis.com) and put the key to the credentials file : const kGoogleApiKeyDirections = 'YOUR API KEY';
 
-There you go, you can now run & the project. Enjoy!
+There you go, you can now run the project. Enjoy!
