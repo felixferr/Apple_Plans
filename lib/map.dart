@@ -1,15 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:geoloc/models/detailsTravel.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:geoloc/models/detailsTravel.dart';
 import 'credentials.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart' as l;
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
-import 'package:google_maps_webservice/places.dart' as G;
+import 'package:google_maps_webservice/places.dart' as places;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geoloc/credentials.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -66,8 +67,8 @@ class _MapState extends State<Map> {
     Uint8List imageData = await _setNavigationIcon();
     updateIcon(imageData);
 
-    l.Position position = await l.Geolocator()
-        .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+    geo.Position position = await geo.Geolocator()
+        .getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
 
     _controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(position.latitude, position.longitude), zoom: 17.0)));
@@ -105,13 +106,15 @@ class _MapState extends State<Map> {
 
                       await _pc.open();
 
-                      G.Prediction p = await PlacesAutocomplete.show(
+                      places.Prediction p = await PlacesAutocomplete.show(
                           context: context,
                           apiKey: kGoogleApiKey,
                           language: "fr",
                           mode: Mode.overlay,
                           logo: Container(height: 0),
-                          components: [G.Component(G.Component.country, "fr")]);
+                          components: [
+                            places.Component(places.Component.country, "fr")
+                          ]);
                       displayPrediction(p);
                     },
                     decoration: InputDecoration(
@@ -195,7 +198,7 @@ class _MapState extends State<Map> {
 
   // LIST ADDRESS
 
-  Future<Null> displayPrediction(G.Prediction p) async {
+  Future<Null> displayPrediction(places.Prediction p) async {
     if (p != null) {
       _pc.close();
       setState(() {
@@ -234,8 +237,8 @@ class _MapState extends State<Map> {
   }
 
   Future updateIcon(Uint8List imageData) async {
-    l.Position position = await l.Geolocator()
-        .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+    geo.Position position = await geo.Geolocator()
+        .getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
     this.setState(() {
       marker = Marker(
           markerId: MarkerId("currentLocation"),
@@ -252,11 +255,11 @@ class _MapState extends State<Map> {
   // DISPLAY VIEW BETWEEN USER LOCATION AND THE ADDRESS
 
   void searchAndNavigate() {
-    l.Geolocator().placemarkFromAddress(searchAddress).then((value) async {
+    geo.Geolocator().placemarkFromAddress(searchAddress).then((value) async {
       var latLng =
           LatLng(value[0].position.latitude, value[0].position.longitude);
-      l.Position position = await l.Geolocator()
-          .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+      geo.Position position = await geo.Geolocator()
+          .getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
 
       distanceTravel = await detailsTravel.getDistance(
           position.latitude,
@@ -512,8 +515,8 @@ class _MapState extends State<Map> {
   // SET ROUTE WITH POLYLINES
 
   setPolylines() async {
-    l.Position position = await l.Geolocator()
-        .getCurrentPosition(desiredAccuracy: l.LocationAccuracy.high);
+    geo.Position position = await geo.Geolocator()
+        .getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
     List<PointLatLng> result = await polylinePoints?.getRouteBetweenCoordinates(
         kGoogleApiKeyDirections,
         position.latitude,
