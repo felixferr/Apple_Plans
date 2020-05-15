@@ -22,7 +22,7 @@ This project has been built using the [Flutter](https://flutter.io/) framework, 
 First, clone the repository with the 'clone' command, or just download the zip.
 
 ```
-$ git clone https://github.com/felixferr/clone_plans_ios.git
+$ git clone https://github.com/felixferr/Apple_Plans.git
 ```
 Then, download either Android Studio or Visual Studio Code, with their respective [Flutter editor plugins](https://flutter.io/get-started/editor/). For more information about Flutter installation procedure, check the [official install guide](https://flutter.io/get-started/install/).
 
